@@ -54,7 +54,9 @@ class StaticResourcesCollector:
 
             os.rename(self.docs_static / "open_api_spec.tmp", self.docs_static / dest)
 
-        new_swagger_json_path = flask.url_for("static", filename=swagger_json_filename)
+        new_swagger_json_path = flask.url_for(
+            "open_api.static", filename=swagger_json_filename
+        )
 
         return new_swagger_json_path
 
