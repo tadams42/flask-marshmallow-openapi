@@ -1,0 +1,82 @@
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+
+  <title>{{ api_name }} Swagger UI</title>
+
+  <link rel="stylesheet" type="text/css"
+    href="{{ url_for('open_api.static', filename='swagger_ui/swagger-ui.css') }}" />
+  <link rel="stylesheet" type="text/css" href="{{ url_for('open_api.static', filename='swagger_ui/index.css') }}" />
+  <link rel="icon" type="image/png" href="{{ url_for('open_api.static', filename='swagger_ui/favicon-32x32.png') }}"
+    sizes="32x32" />
+  <link rel="icon" type="image/png" href="{{ url_for('open_api.static', filename='swagger_ui/favicon-16x16.png') }}"
+    sizes="16x16" />
+
+</head>
+
+<body>
+  <div id="swagger-ui"></div>
+
+  <script src="{{ url_for('open_api.static', filename='swagger_ui/swagger-ui-bundle.js') }}"></script>
+  <script src="{{ url_for('open_api.static', filename='swagger_ui/swagger-ui-standalone-preset.js') }}"></script>
+  <script>
+    function cmpr(a, b) {
+      if (a.startsWith("Grupa:") && b.startsWith("Grupa:")) {
+        if (a < b) {
+          return -1;
+        } else if (a > b) {
+          return 1;
+        }
+        return 0;
+      } else if (!a.startsWith("Grupa:") && !b.startsWith("Grupa:")) {
+        if (a < b) {
+          return -1;
+        } else if (a > b) {
+          return 1;
+        }
+        return 0;
+      } else if (a.startsWith("Grupa:") && !b.startsWith("Grupa:")) {
+        return -1;
+      } else {
+        return 1;
+      }
+    }
+  </script>
+  <script>
+    var config = {
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      plugins: [
+        SwaggerUIBundle.plugins.DownloadUrl
+      ],
+      layout: "StandaloneLayout"
+    };
+    var user_config = {{ config_json| safe}};  // User config options provided from Python code
+    user_config["tagSorter"] = cmpr;
+    for (var attrname in user_config) { config[attrname] = user_config[attrname]; }
+
+    window.onload = function () {
+      // Build a system
+      const ui = SwaggerUIBundle(config)
+
+      {% if oauth_config_json %}
+      var oauth_user_config = {{ oauth_config_json| safe
+    }};  // OAuth2 user config options provided from Python code
+    ui.initOAuth(oauth_user_config);
+    {% endif %}
+
+    window.ui = ui
+      }
+  </script>
+</body>
+
+</html>

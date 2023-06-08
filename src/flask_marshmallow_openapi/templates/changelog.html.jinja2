@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>{{ api_name }} CHANGELOG</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta http-equiv="Cache-Control" content="no-store" />
+
+	<!-- zero-md -->
+	<script type="module" src="https://cdn.jsdelivr.net/gh/zerodevx/zero-md@2/dist/zero-md.min.js"></script>
+
+	<!-- md-block (abandoned) -->
+	<!-- <script type="module" src="https://md-block.verou.me/md-block.js"></script> -->
+
+</head>
+
+<body>
+	<zero-md src="{{ url_for('open_api.changelog_md') }}"></zero-md>
+	<!-- <md-block src="{{ url_for('open_api.changelog_md') }}"></md-block> -->
+
+</body>
+
+</html>
