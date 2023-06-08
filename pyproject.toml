@@ -32,7 +32,6 @@ dependencies = [
 
 [project.urls]
 Source = "https://github.com/tadams42/flask-marshmallow-openapi"
-Documentation = "https://flask-marshmallow-openapi.readthedocs.io/en/latest/"
 
 
 [project.optional-dependencies]

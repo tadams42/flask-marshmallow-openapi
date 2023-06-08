@@ -1,0 +1,31 @@
+---
+title: {{ api_name }}
+openapi_version: 3.0.2
+
+servers:
+  - url: http://127.0.0.1:5000
+    description: |
+      Flask dev server running locally on developer machine
+
+  - url: https://foo.example.com
+    description: Live API server
+
+components:
+  securitySchemes:
+    access_token:
+      scheme: bearer
+      type: http
+      bearerFormat: JWT
+      description: |
+        This endpoint requires [JWT](https://jwt.io/) access token.
+    refresh_token:
+      scheme: bearer
+      type: http
+      bearerFormat: JWT
+      description: |
+        This endpoint requires [JWT](https://jwt.io/) refresh token.
+
+tags:
+  - name: Books
+    description: |
+      Common documentation for all book related routes.

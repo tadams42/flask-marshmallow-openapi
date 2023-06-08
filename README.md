@@ -9,12 +9,16 @@ Provides OpenAPI documentation generated from code for
 [Flask](https://flask.palletsprojects.com/en/latest/) APIs built around
 [marshmallow](https://marshmallow.readthedocs.io/en/stable/) schemas.
 
-This was crated because no other similar projects worked exactly the way I wanted them.
-It is hackish and organically grown (TM). You will probably be better served by some
-other, properly maintained project with similar purpose:
+This hackish and organically grown (TM) package was crated because no other similar
+projects worked exactly the way I wanted them.
+
+You will probably be better served by some other, properly maintained project with
+similar purpose:
 
 - [flasgger](https://github.com/flasgger/flasgger)
 - [flask-openapi3](https://github.com/luolingchun/flask-openapi3)
+
+If you still want to use it, welcome aboard :-) and read on!
 
 ## Installation
 
@@ -24,7 +28,8 @@ pip install flask-marshmallow-openapi
 
 ## Example
 
-See [example application](./docs/examples/foobar_api/). Following is incomplete excerpt:
+See [example application](./docs/examples/foobar_api/README.md). Following is incomplete
+excerpt to demonstrate:
 
 
 ```py
@@ -68,15 +73,26 @@ def books_list():
 @app.route("/books/<int:book_id>", methods=["GET"])
 @open_api.get(BookSchema, "bookDetail", many=False)
 def books_detail(book_id):
+    """
+    description: |
+        Look I can Markdown!
+
+        | foo | bar | baz |
+        | --- | --- | --- |
+        | 1   | 2   | 3   |
+        | 4   | 5   | 6   |
+    """
     return "<p>Hello, World!</p>"
 
 
 conf = OpenAPISettings(
     api_version="v1",
     api_name="Foobar API",
-    app_package_name="foobar",
-    mounted_at="/v1"
+    app_package_name="foobar_api",
+    mounted_at="/v1",
 )
 
-docs_middleware = OpenAPI(config=conf, app=app)
+
+docs = OpenAPI(config=conf)
+docs.init_app(app)
 ```
