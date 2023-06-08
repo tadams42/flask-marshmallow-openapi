@@ -1,0 +1,40 @@
+graft src/flask_marshmallow_openapi/resources
+graft src/flask_marshmallow_openapi/templates
+graft src/flask_marshmallow_openapi/static
+
+include .bumpversion.cfg
+include .dockerignore
+include .gitignore
+include .python-version
+include CHANGELOG.md
+include INSTALL.md
+include MANIFEST.in
+include README.md
+include requirements.in
+include pyproject.toml
+
+recursive-include src *.yaml
+recursive-include src *.yml
+recursive-include src *.json
+recursive-include src *.md
+recursive-include src *.svg
+recursive-include src *.jinja2
+
+prune bin
+prune build
+prune config
+prune docs
+prune log
+prune scratchpad
+prune tests
+prune tmp
+prune dist
+
+prune .git
+prune .idea
+prune .pytest_cache
+prune .venv
+prune .vscode
+prune __pycache__
+
+global-exclude *.py[cod] __pycache__ *.so *.dylib .directory .ipynb_checkpoints/* *.code-workspace
