@@ -37,4 +37,4 @@ prune .venv
 prune .vscode
 prune __pycache__
 
-global-exclude *.py[cod] __pycache__ *.so *.dylib .directory .ipynb_checkpoints/* *.code-workspace
+global-exclude *.py[cod] __pycache__ *.so *.dylib .directory .ipynb_checkpoints/* *.code-workspace *.js.map *.css.map
