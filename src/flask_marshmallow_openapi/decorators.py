@@ -16,6 +16,7 @@ import wrapt
 import yaml
 
 from .helpers import schema_name, schema_ref
+from .securities import Securities
 
 ATTRIBUTE_NAME = "_open_api"
 _ENCOUNTERED_OPERATION_IDS = set()
@@ -54,6 +55,7 @@ def get(
     summary: str = "",
     many: bool = False,
     errors: Optional[dict] = None,
+    security: Securities = Securities.access_token,
     additional_content: Optional[dict] = None,
 ):
     """
@@ -72,9 +74,8 @@ def get(
         "description": "",
     }
 
-    # TODO: This should be part of input params
-    if operation_id == "refresh_token":
-        open_api_data["security"] = [{"refresh_token": []}]
+    if security != Securities.no_token:
+        open_api_data["security"] = [{f"{security.name}": []}]
 
     if additional_content:
         for k, v in additional_content.items():
@@ -109,6 +110,7 @@ def post(
     summary: Optional[str] = None,
     errors: Optional[dict] = None,
     headers: Optional[List[dict]] = None,
+    security: Securities = Securities.access_token,
 ):
     """
     Decorator that will inject standard sets of our OpenAPI POST docs into decorated
@@ -123,6 +125,8 @@ def post(
 
     open_api_data = _initial_docs(request_schema)
     open_api_data["operationId"] = operation_id
+    if security != Securities.no_token:
+        open_api_data["security"] = [{f"{security.name}": []}]
 
     # TODO: This convention of having "create" in schema name makes our code smelly,
     # come up with something more explicit
@@ -172,7 +176,10 @@ def post(
 
 
 def delete_(
-    resource_schema, operation_id: Optional[str] = None, errors: Optional[dict] = None
+    resource_schema,
+    operation_id: Optional[str] = None,
+    errors: Optional[dict] = None,
+    security: Securities = Securities.access_token,
 ):
     """
     Decorator that will inject standard sets of our OpenAPI DELETE docs into decorated
@@ -186,6 +193,8 @@ def delete_(
     open_api_data["operationId"] = operation_id
     open_api_data["responses"]["204"] = {"description": "Resource was deleted"}
     open_api_data["parameters"][0]["name"] = resource_schema.opts.url_id_field
+    if security != Securities.no_token:
+        open_api_data["security"] = [{f"{security.name}": []}]
 
     tags = getattr(resource_schema.opts, "tags", None) or getattr(
         resource_schema.opts, "tags", None
@@ -204,6 +213,7 @@ def patch(
     operation_id: Optional[str] = None,
     errors: Optional[dict] = None,
     additional_content: Optional[dict] = None,
+    security: Securities = Securities.access_token,
 ):
     """
     Decorator that will inject standard sets of our OpenAPI PATCH docs into decorated
@@ -218,6 +228,8 @@ def patch(
 
     open_api_data = _initial_docs(request_schema)
     open_api_data["operationId"] = operation_id
+    if security != Securities.no_token:
+        open_api_data["security"] = [{f"{security.name}": []}]
     open_api_data["responses"]["200"] = {
         "content": {
             "application/json": {"schema": {"$ref": schema_ref(response_schema)}}
@@ -313,14 +325,6 @@ def _initial_docs(schema_cls):
             }
         ],
     }
-
-    if schema_cls.__name__ not in {
-        "LoginRequestSchema",
-        "ResetPasswordSchema",
-        "NewPasswordSchema",
-        "ApiHealthCheckSchema",
-    }:
-        retv["security"] = [{"access_token": []}]
 
     return retv
 
