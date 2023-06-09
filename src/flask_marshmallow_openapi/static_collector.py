@@ -62,7 +62,9 @@ class StaticResourcesCollector:
 
     def _write_redoc_html(self, swagger_json_url):
         page = flask.render_template(
-            "re_doc.jinja2", swagger_json_path=swagger_json_url
+            "re_doc.jinja2",
+            swagger_json_path=swagger_json_url,
+            api_name=self.open_api.config.api_name,
         )
         with open(self.destination_dir / "re_doc.html", "w") as f:
             f.write(page)
@@ -82,7 +84,9 @@ class StaticResourcesCollector:
             if self.open_api.config.changelog_md_loader:
                 f.write(self.open_api.config.changelog_md_loader())
 
-        page = flask.render_template("changelog.html.jinja2")
+        page = flask.render_template(
+            "changelog.html.jinja2", api_name=self.open_api.config.api_name
+        )
         with open(self.destination_dir / "changelog.html", "w") as f:
             f.write(page)
 
