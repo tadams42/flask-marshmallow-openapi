@@ -9,7 +9,7 @@ Provides OpenAPI documentation generated from code for
 [Flask](https://flask.palletsprojects.com/en/latest/) APIs built around
 [marshmallow](https://marshmallow.readthedocs.io/en/stable/) schemas.
 
-This hackish and organically grown (TM) package was crated because no other similar
+This hackish and organically grown (TM) package was created because no other similar
 projects worked exactly the way I wanted them.
 
 You will probably be better served by some other, properly maintained project with
@@ -95,4 +95,55 @@ conf = OpenAPISettings(
 
 docs = OpenAPI(config=conf)
 docs.init_app(app)
+```
+
+## Serving docs via ngnix
+
+Add `collect-static` command to your app:
+
+```py
+import shutil
+
+import click
+import flask
+
+@app.cli.command("collect_static")
+@click.argument(
+    "destination_dir",
+    nargs=1,
+    type=click.Path(file_okay=False, dir_okay=True, writable=True, resolve_path=True),
+    required=True,
+)
+def collect_static_command(destination_dir):
+    shutil.copytree(
+        flask.current_app.static_folder, destination_dir, dirs_exist_ok=True
+    )
+    docs.collect_static(destination_dir)
+    click.echo(f"Static files collected into {destination_dir}.")
+```
+
+Configure `nginx`:
+
+```nginx
+server {
+    # ...
+
+    location ^~ /v1/static {
+        alias /home/user/static;
+        try_files $uri $uri.html =404;
+    }
+
+    location ^~ /v1/docs {
+        alias /home/user/static/docs;
+        try_files $uri $uri.html =404;
+    }
+
+    # ...
+}
+```
+
+Whenever deploying app, call:
+
+```sh
+flask --app foobar_api collect-static /home/user/static
 ```
