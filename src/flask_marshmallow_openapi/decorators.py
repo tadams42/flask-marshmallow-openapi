@@ -10,20 +10,21 @@ import textwrap
 from typing import List, Optional, Type
 
 import flask
+import inflection
 import marshmallow
 import werkzeug.routing
 import wrapt
 import yaml
 
 from .helpers import schema_name, schema_ref
-from .securities import Securities
+from .models import ParameterObject, Securities
 
 ATTRIBUTE_NAME = "_open_api"
 _ENCOUNTERED_OPERATION_IDS = set()
 
 
 def _generate_operation_id(method, many, response_schema):
-    for_schema = (
+    for_schema = inflection.underscore(
         schema_name(response_schema)
         .replace("Schema", "")
         .replace("Update", "")
@@ -31,16 +32,16 @@ def _generate_operation_id(method, many, response_schema):
     )
 
     if method == "get":
-        return ("list" if many else "detail") + for_schema
+        return for_schema + "_" + ("list" if many else "detail")
 
     if method == "post":
-        return "create" + for_schema
+        return for_schema + "_" + "create"
 
     if method == "patch":
-        return "update" + for_schema
+        return for_schema + "_" + "update"
 
     if method == "delete":
-        return "delete" + for_schema
+        return for_schema + "_" + "delete"
 
 
 def hide_doc():
@@ -54,14 +55,17 @@ def get(
     operation_id: Optional[str] = None,
     summary: str = "",
     many: bool = False,
-    errors: Optional[dict] = None,
+    errors: dict | None = None,
     security: Securities = Securities.access_token,
-    additional_content: Optional[dict] = None,
+    additional_content: dict | None = None,
+    additional_parameters: list[ParameterObject] | None = None,
+    tags_override: list[str] | None = None,
 ):
     """
     Decorator that will inject standard sets of our OpenAPI GET docs into decorated
     method.
     """
+
     if not operation_id:
         operation_id = _generate_operation_id("get", many, response_schema)
 
@@ -91,7 +95,19 @@ def get(
             # are described by schemas that don't have that field either.
             pass
 
-    tags = getattr(response_schema.opts, "tags", None)
+    if additional_parameters:
+        open_api_data["parameters"] = open_api_data.get("parameters", []) + [
+            _.to_dict for _ in additional_parameters
+        ]
+
+    if "parameters" in open_api_data:
+        open_api_data["parameters"] = [
+            _ for _ in open_api_data["parameters"] if (_["name"])
+        ]
+        if not open_api_data["parameters"]:
+            del open_api_data["parameters"]
+
+    tags = tags_override or getattr(response_schema.opts, "tags", None)
     if tags:
         open_api_data["tags"] = tags
 
