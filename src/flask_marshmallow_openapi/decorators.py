@@ -127,6 +127,7 @@ def post(
     errors: Optional[dict] = None,
     headers: Optional[List[dict]] = None,
     security: Securities = Securities.access_token,
+    additional_parameters: list[ParameterObject] | None = None,
 ):
     """
     Decorator that will inject standard sets of our OpenAPI POST docs into decorated
@@ -172,6 +173,18 @@ def post(
         open_api_data["parameters"][0]["name"] = url_id_field
     else:
         del open_api_data["parameters"]
+
+    if additional_parameters:
+        open_api_data["parameters"] = open_api_data.get("parameters", []) + [
+            _.to_dict for _ in additional_parameters
+        ]
+
+    if "parameters" in open_api_data:
+        open_api_data["parameters"] = [
+            _ for _ in open_api_data["parameters"] if (_["name"])
+        ]
+        if not open_api_data["parameters"]:
+            del open_api_data["parameters"]
 
     tags = getattr(request_schema.opts, "tags", None) or getattr(
         response_schema.opts, "tags", None
