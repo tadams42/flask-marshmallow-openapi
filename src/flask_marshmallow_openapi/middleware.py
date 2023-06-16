@@ -150,8 +150,15 @@ class OpenAPI:
             for name, klass in helpers.all_schemas():
                 # apispec automatically registers all nested schema so we must prevent
                 # registering them ourselves because of DuplicateSchemaError
+                x_tags = getattr(klass.opts, "x_tags", None)
+
                 try:
-                    self._apispec.components.schema(name, schema=klass)
+                    if x_tags:
+                        self._apispec.components.schema(
+                            name, component={"x-tags": x_tags}, schema=klass
+                        )
+                    else:
+                        self._apispec.components.schema(name, schema=klass)
                 except DuplicateComponentNameError:
                     pass
 
