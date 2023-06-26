@@ -1,18 +1,60 @@
 import copy
 import re
 import textwrap
-from typing import Final, Set
+from typing import Final, Type
 
 import flask
+import inflection
+import marshmallow as ma
 import werkzeug
 import werkzeug.routing
+import wrapt
 import yaml
+
+from .schemas_registry import SchemasRegistry
 
 
 class FlaskPathsManager:
-    _ENCOUNTERED_OPERATION_IDS: Final[Set[str]] = set()
+    _ENCOUNTERED_OPERATION_IDS: Final[set[str]] = set()
     _PATH_CONVERTER: Final[re.Pattern] = re.compile(r"<([a-z]*:)?([a-z_]*)>")
     ATTRIBUTE_NAME: Final[str] = "_open_api"
+
+    @classmethod
+    def generate_operation_id(
+        cls, method: str, is_list: bool, response_schema: str | Type[ma.Schema]
+    ):
+        for_schema = inflection.underscore(
+            SchemasRegistry.schema_name(response_schema)
+            .replace("Schema", "")
+            .replace("Update", "")
+            .replace("Create", "")
+        )
+
+        if method.lower() == "get":
+            return for_schema + "_" + ("list" if is_list else "detail")
+
+        if method.lower() == "post":
+            return for_schema + "_" + "create"
+
+        if method.lower() == "patch":
+            return for_schema + "_" + "update"
+
+        if method.lower() == "delete":
+            return for_schema + "_" + "delete"
+
+        raise ValueError(f'Unsupported method "{method}"!')
+
+    @classmethod
+    def decorate(cls, wrapped, open_api_data):
+        @wrapt.decorator
+        def wrapper(wrapped, instance, args, kwargs):
+            return wrapped(*args, **kwargs)
+
+        if not hasattr(wrapped, cls.ATTRIBUTE_NAME):
+            setattr(wrapped, cls.ATTRIBUTE_NAME, dict())
+        getattr(wrapped, cls.ATTRIBUTE_NAME).update(open_api_data)
+
+        return wrapper(wrapped)
 
     def __init__(self, app: flask.Flask) -> None:
         self.app = app
@@ -51,7 +93,7 @@ class FlaskPathsManager:
                     }
 
     @classmethod
-    def _should_document_enpdpoint(cls, name: str):
+    def _should_document_enpdpoint(cls, name: str) -> bool:
         # Reduce spam in docs
         return (
             "_relationships_" not in name
@@ -121,7 +163,7 @@ class FlaskPathsManager:
     def _path_for(self, rule: werkzeug.routing.Rule):
         # Bug in apispec_webframeworks.flask.FlaskPlugin only adds single path for each
         # inspected view.
-        # https://github.com/marshmallow-code/apispec-webframeworks/issues/14
+        # https://github.com/ma-code/apispec-webframeworks/issues/14
         #
         # Thus, we implement our own inspection
         operations = self._operations_for_rule(rule)

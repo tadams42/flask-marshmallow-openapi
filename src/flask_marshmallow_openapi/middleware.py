@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 import apispec
 import flask
@@ -113,7 +111,7 @@ class OpenAPI:
     +--------------------------+--------+------------------------------------------------+
     """
 
-    def __init__(self, config: OpenAPISettings, app: Optional[flask.Flask] = None):
+    def __init__(self, config: OpenAPISettings, app: flask.Flask | None = None):
         self._apispec = None
         self.blueprint = flask.Blueprint(
             name="open_api",
@@ -127,7 +125,7 @@ class OpenAPI:
             self.init_app(app)
 
     def init_app(self, app: flask.Flask):
-        self._add_own_endpoints(app)
+        self._add_own_endpoints()
 
         full_url_prefix = (
             Path(self.config.mounted_at or "/") / f"./{self.blueprint.url_prefix}"
@@ -148,7 +146,7 @@ class OpenAPI:
             self._apispec = apispec.APISpec(
                 plugins=[MarshmallowPlugin()], **(initial_swagger_json)
             )
-            for name, klass in SchemasRegistry.all_schemas():
+            for name, klass in SchemasRegistry.all_schemas().items():
                 # apispec automatically registers all nested schema so we must prevent
                 # registering them ourselves because of DuplicateSchemaError
                 x_tags = getattr(klass.opts, "x_tags", None)
@@ -206,7 +204,7 @@ class OpenAPI:
 
         return fields
 
-    def _add_own_endpoints(self, app):
+    def _add_own_endpoints(self):
         # How this stuff works?
         #
         # On development machines, these endpoints will be handled by supplied lambdas.

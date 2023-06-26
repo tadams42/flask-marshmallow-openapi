@@ -5,7 +5,7 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import flask
 from flask import current_app
@@ -96,7 +96,7 @@ class StaticResourcesCollector:
         shutil.copytree(_SELF_PATH / "static", self.docs_static, dirs_exist_ok=True)
 
 
-def _file_checksum(file_path: Union[str, Path], hashlib_callable):
+def _file_checksum(file_path: str | Path, hashlib_callable):
     """Given path of the file and hash function, calculates file digest"""
     if os.path.isfile(file_path) and callable(hashlib_callable):
         hash_obj = hashlib_callable()

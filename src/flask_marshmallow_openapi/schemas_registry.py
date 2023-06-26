@@ -1,58 +1,58 @@
 import importlib
 import inspect
-from typing import Optional, Set, Tuple, Type, Union
+from typing import Type
 
-import marshmallow
+import marshmallow as ma
 
-_KNOWN_SCHEMAS: Set[Tuple[str, Type[marshmallow.Schema]]] = set()
+_KNOWN_SCHEMAS: dict[str, Type[ma.Schema]] = dict()
 
 
 class SchemasRegistry:
     @classmethod
-    def schema_ref(cls, schema: Union[str, Type[marshmallow.Schema]]) -> str:
+    def schema_ref(cls, schema: str | Type[ma.Schema]) -> str:
         return f"#/components/schemas/{cls.schema_name(schema)}"
 
     @classmethod
-    def schema_name(cls, schema: Union[str, Type[marshmallow.Schema]]) -> Optional[str]:
-        if schema:
-            return (schema if isinstance(schema, str) else schema.__name__).replace(
-                "Schema", ""
-            )
-        else:
-            return None
+    def schema_name(cls, schema: str | Type[ma.Schema]) -> str:
+        return (schema if isinstance(schema, str) else schema.__name__).replace(
+            "Schema", ""
+        )
 
     @classmethod
-    def all_schemas(cls) -> Set[Tuple[str, Type[marshmallow.Schema]]]:
+    def all_schemas(cls) -> dict[str, Type[ma.Schema]]:
         return _KNOWN_SCHEMAS
 
     @classmethod
     def main_schema_cls(
-        cls, other_schema: Union[str, marshmallow.Schema]
-    ) -> Type[marshmallow.Schema]:
+        cls, other_schema: str | ma.Schema | Type[ma.Schema]
+    ) -> Type[ma.Schema]:
         """
-        Given ie. class FooCreateSchema or name "FooCreateSchema", returns class FooSchema.
+        Given ie. class FooCreateSchema or name "FooCreateSchema", returns class
+        FooSchema.
         """
-        try:
-            other_schema = other_schema.__name__
-        except AttributeError:
-            pass
+        name = None
+        if isinstance(other_schema, ma.Schema):
+            name = other_schema.__class__.__name__
+        elif isinstance(other_schema, str):
+            name = other_schema
+        else:
+            try:
+                name = other_schema.__name__
+            except AttributeError:
+                pass
 
-        other_schema = other_schema.replace("Create", "").replace("Update", "")
+        if not name:
+            raise TypeError(f"Couldn't find schema name for {other_schema}!")
 
-        retv = next(
-            (_[1] for _ in cls.all_schemas() if _[1].__name__ == other_schema), None
-        )
-
+        name = name.replace("Create", "").replace("Update", "")
+        retv = _KNOWN_SCHEMAS.get(name, None)
         if not retv:
             raise RuntimeError(f"Couldn't find main schema for {other_schema}!")
 
         return retv
 
     @classmethod
-    def find_all_schemas(
-        cls,
-        app_package_name: str,
-    ) -> Set[Tuple[str, Type[marshmallow.Schema]]]:
+    def find_all_schemas(cls, app_package_name: str) -> dict[str, Type[ma.Schema]]:
         global _KNOWN_SCHEMAS
 
         if _KNOWN_SCHEMAS:
@@ -78,21 +78,18 @@ class SchemasRegistry:
             for name, _ in inspect.getmembers(module_, inspect.isclass)
         }.union(clss):
             if (
-                issubclass(klass, marshmallow.Schema)
+                issubclass(klass, ma.Schema)
                 and klass.__name__ != "Schema"
                 and klass.__name__ != "JsonApiSchema"
             ):
-                _KNOWN_SCHEMAS.add(
-                    (
-                        cls.schema_name(klass),
-                        klass,
-                    )
-                )
+                _KNOWN_SCHEMAS[cls.schema_name(klass)] = klass
 
         return _KNOWN_SCHEMAS
 
 
-def main_schema_cls(
-    other_schema: Union[str, marshmallow.Schema]
-) -> Type[marshmallow.Schema]:
+def main_schema_cls(other_schema: str | ma.Schema) -> Type[ma.Schema]:
+    """
+    Given ie. class FooCreateSchema or name "FooCreateSchema", returns class
+    FooSchema.
+    """
     return SchemasRegistry.main_schema_cls(other_schema)
