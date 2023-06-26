@@ -44,6 +44,7 @@ dev = [
     "isort >= 5.10.1",
     "pip-tools >= 6.5.1",
     "flask-shell-ipython>=0.5.1",
+    "inflection",
 ]
 # For dev machines and CI generating docs
 docs = [
@@ -100,7 +101,7 @@ addopts = [
     # "--random-order-bucket=class",
 ]
 
-python_classes = ["Describe*", "When_*", "describe_*", "when_*"]
+python_classes = ["Describe*", "When*", "describe_*", "when_*"]
 python_functions = ["it_*", "test_*", "then_*", "when_*"]
 python_files = ["test_*", "*_spec.py", "*_test.py"]
 spec_header_format = "{test_case}"

@@ -26,7 +26,7 @@ class OpenAPISettings:
     #: Version string displayed in various places in of API docs
     api_version: str
 
-    #: Top level python package in which to search for marshmalow.Schema classes
+    #: Top level python package in which to search for marshmallow.Schema classes
     app_package_name: str
 
     #: Where to mount OpenAPI blueprint? Giving ie. "/v1" will create following docs
