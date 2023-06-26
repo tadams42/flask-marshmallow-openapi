@@ -11,7 +11,7 @@ import flask
 from flask import current_app
 
 if TYPE_CHECKING:
-    from .open_api import OpenAPI
+    from .middleware import OpenAPI
 
 # TODO: This shouldn't be needed once we can fully rely on importlib.resources
 _SELF_PATH = Path(os.path.abspath(os.path.dirname(__file__)))

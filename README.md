@@ -4,7 +4,6 @@
 [![license](https://img.shields.io/pypi/l/flask-marshmallow-openapi.svg)](https://opensource.org/licenses/MIT)
 [![python_versions](https://img.shields.io/pypi/pyversions/flask-marshmallow-openapi.svg)](https://pypi.org/project/flask-marshmallow-openapi/)
 
-
 Provides OpenAPI documentation generated from code for
 [Flask](https://flask.palletsprojects.com/en/latest/) APIs built around
 [marshmallow](https://marshmallow.readthedocs.io/en/stable/) schemas.

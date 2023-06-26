@@ -2,4 +2,5 @@ __version__ = "0.2.0"
 
 from . import decorators as open_api
 from .middleware import OpenAPI, OpenAPISettings
-from .models import ParameterLocation, ParameterObject, Securities
+from .schemas_registry import main_schema_cls
+from .securities import Securities

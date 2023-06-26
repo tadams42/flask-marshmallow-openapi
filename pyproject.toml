@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=65", "wheel"]
+requires = ["setuptools >= 65", "wheel"]
 
 
 [project]
@@ -22,11 +22,14 @@ keywords = ["OpenAPI SwaggerUI ReDoc"]
 license = { text = "MIT" }
 authors = [{ name = "Tomislav Adamic", email = "tomislav.adamic@gmail.com" }]
 dependencies = [
-    "wrapt",
-    "pyyaml",
-    "flask >= 2.3.0",
-    "marshmallow >= 3.18.0",
     "apispec[yaml,marshmallow]",
+    "flask >= 2.3.0",
+    "inflection",
+    "marshmallow >= 3.18.0",
+    "pyyaml",
+    "requests",
+    "wrapt",
+    "openapi-pydantic-models >= 0.1.0",
 ]
 
 
@@ -37,14 +40,13 @@ Source = "https://github.com/tadams42/flask-marshmallow-openapi"
 [project.optional-dependencies]
 # For dev machines
 dev = [
-    "ipython>=8.6.0",
     "black >= 22.1.0",
     "bump2version >= 1.0.1",
     "check-manifest >= 0.47",
+    "flask-shell-ipython >= 0.5.1",
+    "ipython >= 8.6.0",
     "isort >= 5.10.1",
     "pip-tools >= 6.5.1",
-    "flask-shell-ipython>=0.5.1",
-    "inflection",
 ]
 # For dev machines and CI generating docs
 docs = [
@@ -61,9 +63,9 @@ tests = [
     "faker >= 12.3.0",
     "lorem >= 0.1.1",
     "pytest >= 7.0.1",
-    "pytest-spec >= 3.2.0",
     "pytest-profiling >= 1.7.0",
-    "pytest-random-order>=1.0.4",
+    "pytest-random-order >= 1.0.4",
+    "pytest-spec >= 3.2.0",
 ]
 
 

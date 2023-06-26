@@ -12,7 +12,8 @@ import requests
 from apispec.exceptions import DuplicateComponentNameError
 from apispec.ext.marshmallow import MarshmallowPlugin
 
-from . import decorators, helpers
+from .flask_paths import FlaskPathsManager
+from .schemas_registry import SchemasRegistry
 from .static_collector import StaticResourcesCollector
 
 _MINIMAL_SPEC = {"title": "Some API", "openapi_version": "3.0.2", "version": "v1"}
@@ -133,7 +134,7 @@ class OpenAPI:
         )
 
         with app.test_request_context():
-            helpers.find_all_schemas(self.config.app_package_name)
+            SchemasRegistry.find_all_schemas(self.config.app_package_name)
 
             initial_swagger_json: dict = _MINIMAL_SPEC
             if self.config.swagger_json_template_loader:
@@ -147,7 +148,7 @@ class OpenAPI:
             self._apispec = apispec.APISpec(
                 plugins=[MarshmallowPlugin()], **(initial_swagger_json)
             )
-            for name, klass in helpers.all_schemas():
+            for name, klass in SchemasRegistry.all_schemas():
                 # apispec automatically registers all nested schema so we must prevent
                 # registering them ourselves because of DuplicateSchemaError
                 x_tags = getattr(klass.opts, "x_tags", None)
@@ -162,7 +163,8 @@ class OpenAPI:
                 except DuplicateComponentNameError:
                     pass
 
-            self._collect_endpoints_docs(app)
+            for data in FlaskPathsManager(app).collect_endpoints_docs():
+                self._apispec.path(path=data["path"], operations=data["operations"])
 
         app.register_blueprint(self.blueprint, url_prefix=str(full_url_prefix))
 
@@ -212,9 +214,9 @@ class OpenAPI:
         # content (ie. "swagger.json", "CHANGELOG.md") without the need to reload
         # development server.
         #
-        # On deployed machines, we put reverse proxy in front of Flask app.
-        # We configure reverse proxy to rewrite request some URLs and point then onto
-        # static files that are generated once, during deployment.
+        # On deployed machines, we put reverse proxy in front of Flask app. We configure
+        # reverse proxy to rewrite request static URLs and point them onto static files
+        # that are generated once, during deployment.
         #
         # For example, request `GET /v1/docs/re_doc` will:
         #
@@ -289,21 +291,3 @@ class OpenAPI:
     @property
     def _to_yaml(self):
         return self._apispec.to_yaml()
-
-    def _should_document_enpdpoint(self, name: str):
-        # Reduce spam in docs
-        return (
-            "_relationships_" not in name
-            and ".docs." not in name
-            and "static" not in name
-        )
-
-    def _collect_endpoints_docs(self, app):
-        for rule in app.url_map.iter_rules():
-            if self._should_document_enpdpoint(rule.endpoint):
-                open_api_path = decorators.path_for(app, rule)
-                if open_api_path:
-                    self._apispec.path(
-                        path=open_api_path["path"],
-                        operations=open_api_path["operations"],
-                    )
