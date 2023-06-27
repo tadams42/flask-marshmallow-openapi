@@ -29,7 +29,7 @@ dependencies = [
     "pyyaml",
     "requests",
     "wrapt",
-    "openapi-pydantic-models >= 0.1.0",
+    "openapi-pydantic-models >= 0.2.0",
 ]
 
 

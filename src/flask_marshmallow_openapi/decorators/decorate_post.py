@@ -158,6 +158,4 @@ def post(
         header.in_ = Locations.header
         open_api_data.parameters.append(header)
 
-    return functools.partial(
-        FlaskPathsManager.decorate, open_api_data={"post": open_api_data.dict()}
-    )
+    return functools.partial(FlaskPathsManager.decorate, open_api_data=open_api_data)

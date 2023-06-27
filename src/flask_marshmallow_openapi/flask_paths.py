@@ -1,7 +1,7 @@
-import copy
 import re
 import textwrap
-from typing import Final, Type
+from collections.abc import Generator
+from typing import Any, Final, Type
 
 import flask
 import inflection
@@ -10,13 +10,14 @@ import werkzeug
 import werkzeug.routing
 import wrapt
 import yaml
+from openapi_pydantic_models import OperationObject, PathItemObject
 
 from .schemas_registry import SchemasRegistry
 
 
 class FlaskPathsManager:
     _ENCOUNTERED_OPERATION_IDS: Final[set[str]] = set()
-    _PATH_CONVERTER: Final[re.Pattern] = re.compile(r"<([a-z]*:)?([a-z_]*)>")
+    _PATH_TEMPLATE_CONVERTER: Final[re.Pattern] = re.compile(r"<([a-z]*:)?([a-z_]*)>")
     ATTRIBUTE_NAME: Final[str] = "_open_api"
 
     @classmethod
@@ -46,51 +47,25 @@ class FlaskPathsManager:
 
     @classmethod
     def decorate(cls, wrapped, open_api_data):
+        setattr(wrapped, cls.ATTRIBUTE_NAME, open_api_data)
+
         @wrapt.decorator
         def wrapper(wrapped, instance, args, kwargs):
             return wrapped(*args, **kwargs)
-
-        if not hasattr(wrapped, cls.ATTRIBUTE_NAME):
-            setattr(wrapped, cls.ATTRIBUTE_NAME, dict())
-        getattr(wrapped, cls.ATTRIBUTE_NAME).update(open_api_data)
 
         return wrapper(wrapped)
 
     def __init__(self, app: flask.Flask) -> None:
         self.app = app
 
-    def collect_endpoints_docs(self):
+    def collect_endpoints_docs(
+        self,
+    ) -> Generator[tuple[str, PathItemObject], None, None]:
         for rule in self.app.url_map.iter_rules():
             if self._should_document_enpdpoint(rule.endpoint):
-                open_api_path = self._path_for(rule)
-                if open_api_path:
-                    # data = {
-                    #     "path": "/v1/healthcheck",
-                    #     "operations": {
-                    #         "get": {
-                    #             "operationId": "healthcheck",
-                    #             "responses": {
-                    #                 "200": {
-                    #                     "content": {
-                    #                         "application/json": {
-                    #                             "schema": {
-                    #                                 "$ref": "#/components/schemas/ApiHealthCheck"
-                    #                             }
-                    #                         }
-                    #                     },
-                    #                     "description": "",
-                    #                 }
-                    #             },
-                    #             "tags": ["System"],
-                    #             "summary": "api_health_check",
-                    #         }
-                    #     },
-                    # }
-
-                    yield {
-                        "path": open_api_path["path"],
-                        "operations": open_api_path["operations"],
-                    }
+                path, operations = self._path_for(rule)
+                if path and operations:
+                    yield path, operations
 
     @classmethod
     def _should_document_enpdpoint(cls, name: str) -> bool:
@@ -101,66 +76,88 @@ class FlaskPathsManager:
             and "static" not in name
         )
 
-    def _operations_for_rule(self, rule: werkzeug.routing.Rule):
+    def _operations_for_rule(
+        self, rule: werkzeug.routing.Rule
+    ) -> PathItemObject | None:
         supported_methods = [
             _.lower() for _ in rule.methods if _ not in ["HEAD", "OPTIONS"]
         ]
         view = self.app.view_functions[rule.endpoint]
-        open_api_data = getattr(view, self.ATTRIBUTE_NAME, {})
-        operations = dict()
+
+        retv = PathItemObject()
 
         for method in supported_methods:
-            if method in open_api_data:
-                operations[method] = open_api_data[method]
-            else:
-                operations[method] = dict()
+            view_func = self._view_func(view, method)
 
-            if hasattr(view, "view_class"):
-                f = getattr(view.view_class, method)
-            else:
-                f = view
-
-            from_docstring = self._yaml_from_docstring(f.__doc__)
-            if method in from_docstring:
-                from_docstring = from_docstring[method]
-            operations[method].update(from_docstring)
-
-            operations[method].update(
-                getattr(f, self.ATTRIBUTE_NAME, {}).get(method, {})
+            operation: OperationObject = getattr(
+                view_func, self.ATTRIBUTE_NAME, OperationObject()
             )
 
-            operation_id = operations[method].get(
-                "operationId", f"{method}_{rule.endpoint}"
-            )
-
-            if operation_id == "hidden":
-                del operations[method]
+            if operation.operationId == "hidden":
                 continue
 
-            if operation_id in self.__class__._ENCOUNTERED_OPERATION_IDS:
-                operations[method]["operationId"] = (
-                    operation_id
-                    + "_"
-                    + str(
-                        len(
-                            [
-                                _
-                                for _ in self.__class__._ENCOUNTERED_OPERATION_IDS
-                                if re.match(operation_id + r"[_0-9]*$", _)
-                            ]
-                        )
+            if not operation.operationId:
+                operation.operationId = f"{method}_{rule.endpoint}"
+
+            docstring_data = self._docstring_data(view, method)
+            if docstring_data:
+                operation_data = operation.dict()
+                operation_data.update(docstring_data)
+                operation = OperationObject.parse_obj(operation_data)
+
+            self._register_operation_id(operation)
+
+            if method.lower() == "delete":
+                setattr(retv, "delete_", operation)
+            else:
+                setattr(retv, method.lower(), operation)
+
+        return retv
+
+    def _docstring_data(self, view, method: str) -> dict[str, Any] | None:
+        f = self._view_func(view, method)
+
+        data = yaml.full_load(textwrap.dedent(f.__doc__ or "")) or {}
+
+        if isinstance(data, str):
+            data = {"description": data}
+
+        if data and "description" in data:
+            with self.app.test_request_context():
+                data["description"] = flask.render_template_string(data["description"])
+
+        if method.lower() in data:
+            data = data[method.lower()]
+
+        return data or None
+
+    def _register_operation_id(self, operation: OperationObject):
+        if operation.operationId in self.__class__._ENCOUNTERED_OPERATION_IDS:
+            operation.operationId = (
+                operation.operationId
+                + "_"
+                + str(
+                    len(
+                        [
+                            _
+                            for _ in self.__class__._ENCOUNTERED_OPERATION_IDS
+                            if re.match(operation.operationId + r"[_0-9]*$", _)
+                        ]
                     )
                 )
-            else:
-                operations[method]["operationId"] = operation_id
-
-            self.__class__._ENCOUNTERED_OPERATION_IDS.add(
-                operations[method]["operationId"]
             )
+        self.__class__._ENCOUNTERED_OPERATION_IDS.add(operation.operationId)
 
-        return copy.deepcopy(operations)
+    def _view_func(self, view, method):
+        if hasattr(view, "view_class"):
+            f = getattr(view.view_class, method.lower())
+        else:
+            f = view
+        return f
 
-    def _path_for(self, rule: werkzeug.routing.Rule):
+    def _path_for(
+        self, rule: werkzeug.routing.Rule
+    ) -> tuple[str | None, PathItemObject | None]:
         # Bug in apispec_webframeworks.flask.FlaskPlugin only adds single path for each
         # inspected view.
         # https://github.com/ma-code/apispec-webframeworks/issues/14
@@ -168,23 +165,12 @@ class FlaskPathsManager:
         # Thus, we implement our own inspection
         operations = self._operations_for_rule(rule)
         if operations:
-            return {
-                "path": self._flask_path_to_open_api_path(rule.rule),
-                "operations": operations,
-            }
+            return (
+                self._flask_path_template_to_open_api_path_template(rule.rule),
+                operations,
+            )
+        return None, None
 
     @classmethod
-    def _flask_path_to_open_api_path(cls, path: str):
-        return cls._PATH_CONVERTER.sub(r"{\2}", path)
-
-    def _yaml_from_docstring(self, docstring: str):
-        retv = yaml.full_load(textwrap.dedent(docstring or "")) or {}
-
-        if isinstance(retv, str):
-            retv = {"description": retv}
-
-        if retv and "description" in retv:
-            with self.app.test_request_context():
-                retv["description"] = flask.render_template_string(retv["description"])
-
-        return retv
+    def _flask_path_template_to_open_api_path_template(cls, path: str):
+        return cls._PATH_TEMPLATE_CONVERTER.sub(r"{\2}", path)

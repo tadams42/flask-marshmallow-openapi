@@ -124,6 +124,4 @@ def patch(
 
     _update_errors(open_api_data, errors)
 
-    return functools.partial(
-        FlaskPathsManager.decorate, open_api_data={"patch": open_api_data.dict()}
-    )
+    return functools.partial(FlaskPathsManager.decorate, open_api_data=open_api_data)

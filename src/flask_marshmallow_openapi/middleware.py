@@ -161,8 +161,8 @@ class OpenAPI:
                 except DuplicateComponentNameError:
                     pass
 
-            for data in FlaskPathsManager(app).collect_endpoints_docs():
-                self._apispec.path(path=data["path"], operations=data["operations"])
+            for path, operations in FlaskPathsManager(app).collect_endpoints_docs():
+                self._apispec.path(path=path, operations=operations.dict())
 
         app.register_blueprint(self.blueprint, url_prefix=str(full_url_prefix))
 
