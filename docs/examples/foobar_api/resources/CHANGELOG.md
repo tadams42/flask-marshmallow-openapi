@@ -1,5 +1,0 @@
-# CHANGELOG
-
-- foo
-- bar
-- baz
