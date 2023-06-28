@@ -44,7 +44,7 @@ class SchemasRegistry:
         if not name:
             raise TypeError(f"Couldn't find schema name for {other_schema}!")
 
-        name = name.replace("Create", "").replace("Update", "")
+        name = name.replace("Create", "").replace("Update", "").replace("Schema", "")
         retv = _KNOWN_SCHEMAS.get(name, None)
         if not retv:
             raise RuntimeError(f"Couldn't find main schema for {other_schema}!")
