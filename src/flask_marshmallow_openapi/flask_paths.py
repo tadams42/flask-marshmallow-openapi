@@ -101,7 +101,7 @@ class FlaskPathsManager:
 
             docstring_data = self._docstring_data(view, method)
             if docstring_data:
-                operation_data = operation.dict()
+                operation_data = operation.model_dump()
                 operation_data.update(docstring_data)
                 operation = OperationObject.parse_obj(operation_data)
 

@@ -162,7 +162,7 @@ class OpenAPI:
                     pass
 
             for path, operations in FlaskPathsManager(app).collect_endpoints_docs():
-                self._apispec.path(path=path, operations=operations.dict())
+                self._apispec.path(path=path, operations=operations.model_dump())
 
         app.register_blueprint(self.blueprint, url_prefix=str(full_url_prefix))
 
