@@ -103,7 +103,7 @@ class FlaskPathsManager:
             if docstring_data:
                 operation_data = operation.model_dump()
                 operation_data.update(docstring_data)
-                operation = OperationObject.parse_obj(operation_data)
+                operation = OperationObject.model_validate(operation_data)
 
             self._register_operation_id(operation)
 
