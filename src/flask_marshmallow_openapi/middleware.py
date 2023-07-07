@@ -121,8 +121,64 @@ class OpenAPI:
             static_folder="./static",
         )
         self.config = config
+
+        self._map_to_openapi_types = []
+        self._attribute_functions = []
+
         if app:
             self.init_app(app)
+
+    def add_map_to_openapi_types(self, data):
+        """
+        Call this as many times needed, but before calling `init_app()`.
+
+        Example:
+            class CustomInteger(Integer):
+                pass
+
+            open_api = OpenAPI(config=_open_api_conf)
+            open_api.add_map_to_openapi_types((IntegerLike, Integer,))
+
+            # ...
+
+            open_api.init_app(app)
+
+        See:
+            https://apispec.readthedocs.io/en/latest/using_plugins.html#custom-fields
+        """
+        self._map_to_openapi_types.append(data)
+
+    def add_attribute_function(self, f):
+        """
+        Call this as many times needed, but before calling `init_app()`.
+
+        Example:
+            def ULID_field2properties(self, field, **kwargs):
+                ret = {}
+                if isinstance(field, MyULIDField):
+                    ret["format"] = "ULID"
+                    ret["examples"] = [
+                        "01H4QG7F1XB3MGW7GHB5PA4P89",
+                        "01H4QG7FMQCE8DAPV6EQZREDX4",
+                        "01H4QG7VE3BY903B5DNJ442RDN",
+                        "01H4QG7XCPGCPB3BYN0QPFX61S",
+                        "01H4QG80AHN36H1X1R2FEG61V4",
+                        "01H4QG8294DFA2S9CZTBGEPCNE",
+                        "01H4QG847Q1KVSQE6F8GXKRTJH",
+                    ]
+                return ret
+
+            open_api = OpenAPI(config=_open_api_conf)
+            open_api.add_attribute_function(ULID_field2properties)
+
+            # ...
+
+            open_api.init_app(app)
+
+        See:
+            https://apispec.readthedocs.io/en/latest/using_plugins.html#custom-fields
+        """
+        self._attribute_functions.append(f)
 
     def init_app(self, app: flask.Flask):
         self._add_own_endpoints()
@@ -143,9 +199,15 @@ class OpenAPI:
                 else:
                     initial_swagger_json = self.config.swagger_json_template_loader()
 
+            ma_plugin = MarshmallowPlugin()
             self._apispec = apispec.APISpec(
-                plugins=[MarshmallowPlugin()], **(initial_swagger_json)
+                plugins=[ma_plugin], **(initial_swagger_json)
             )
+            for _ in self._map_to_openapi_types:
+                ma_plugin.map_to_openapi_type(*_)
+            for _ in self._attribute_functions:
+                ma_plugin.converter.add_attribute_function(_)
+
             for name, klass in SchemasRegistry.all_schemas().items():
                 # apispec automatically registers all nested schema so we must prevent
                 # registering them ourselves because of DuplicateSchemaError
