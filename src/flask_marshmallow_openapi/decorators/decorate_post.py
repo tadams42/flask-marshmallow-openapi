@@ -4,6 +4,7 @@ from typing import Type
 import marshmallow as ma
 from openapi_pydantic_models import (
     Locations,
+    OperationObject,
     ParameterObject,
     RequestBodyObject,
     ResponsesObject,
@@ -13,7 +14,7 @@ from openapi_pydantic_models import (
 from ..flask_paths import FlaskPathsManager
 from ..schemas_registry import SchemasRegistry
 from ..securities import Securities
-from .helpers import _initial_docs, _update_errors
+from .helpers import _parameters_from_schema, _update_errors
 
 
 def post(
@@ -24,7 +25,6 @@ def post(
     errors: dict[int, str] | None = None,
     headers: list[ParameterObject | dict] | None = None,
     security: Securities = Securities.access_token,
-    additional_parameters: list[ParameterObject | dict] | None = None,
 ):
     """
     Decorator that will inject standard sets of our OpenAPI POST docs into decorated
@@ -86,14 +86,16 @@ def post(
     if not response_schema:
         response_schema = request_schema
 
-    if not operation_id:
-        operation_id = FlaskPathsManager.generate_operation_id(
-            "post", False, response_schema
-        )
+    open_api_data = OperationObject()
 
-    open_api_data = _initial_docs(request_schema, with_id_in_path=True)
+    open_api_data.operationId = operation_id or FlaskPathsManager.generate_operation_id(
+        "post", False, response_schema
+    )
 
-    open_api_data.operationId = operation_id
+    _parameters_from_schema(
+        request_schema, requires_id_in_path=False, open_api_data=open_api_data
+    )
+
     if security != Securities.no_token:
         open_api_data.security = [SecurityRequirementObject({f"{security.name}": []})]
 
@@ -123,25 +125,6 @@ def post(
 
     if summary:
         open_api_data.summary = summary
-
-    url_id_field = getattr(request_schema.opts, "url_id_field", None)
-
-    # TODO: This convention of having "create" in schema name makes our code smelly,
-    # come up with something more explicit
-    if (
-        url_id_field
-        and "create" not in SchemasRegistry.schema_name(request_schema).lower()
-    ):
-        open_api_data.parameters[0].name = url_id_field
-    else:
-        open_api_data.parameters = []
-
-    for data in additional_parameters or []:
-        if isinstance(data, dict):
-            data = ParameterObject(**data)
-        open_api_data.parameters.append(data)
-
-    open_api_data.parameters = [_ for _ in open_api_data.parameters if _.name]
 
     open_api_data.tags = list(
         set(

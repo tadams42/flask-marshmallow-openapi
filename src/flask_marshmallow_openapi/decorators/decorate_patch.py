@@ -4,6 +4,7 @@ from typing import Type
 import marshmallow as ma
 from openapi_pydantic_models import (
     MediaTypeObject,
+    OperationObject,
     RequestBodyObject,
     ResponsesObject,
     SecurityRequirementObject,
@@ -12,7 +13,7 @@ from openapi_pydantic_models import (
 from ..flask_paths import FlaskPathsManager
 from ..schemas_registry import SchemasRegistry
 from ..securities import Securities
-from .helpers import _initial_docs, _update_errors
+from .helpers import _parameters_from_schema, _update_errors
 
 
 def patch(
@@ -74,16 +75,16 @@ def patch(
     if not response_schema:
         response_schema = request_schema
 
-    if not operation_id:
-        operation_id = FlaskPathsManager.generate_operation_id(
-            "patch", False, response_schema
-        )
+    open_api_data = OperationObject()
 
-    has_id = bool(response_schema.opts.url_id_field)
+    open_api_data.operationId = operation_id or FlaskPathsManager.generate_operation_id(
+        "patch", False, response_schema
+    )
+    has_id = bool(getattr(request_schema.opts, "url_id_field", None))
+    _parameters_from_schema(
+        response_schema, requires_id_in_path=has_id, open_api_data=open_api_data
+    )
 
-    open_api_data = _initial_docs(request_schema, with_id_in_path=has_id)
-
-    open_api_data.operationId = operation_id
     if security != Securities.no_token:
         open_api_data.security = [SecurityRequirementObject({f"{security.name}": []})]
 
@@ -109,11 +110,8 @@ def patch(
     if additional_content:
         for content_type, media in additional_content.items():
             if not isinstance(media, MediaTypeObject):
-                schema = MediaTypeObject(**media)
+                media = MediaTypeObject(**media)
             open_api_data.requestBody.content[content_type] = media
-
-    if has_id:
-        open_api_data.parameters[0].name = response_schema.opts.url_id_field
 
     open_api_data.tags = list(
         set(
