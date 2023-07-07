@@ -20,6 +20,7 @@ from .helpers import _parameters_from_schema, _update_errors
 def post(
     request_schema: Type[ma.Schema],
     response_schema: Type[ma.Schema] | None = None,
+    *,
     operation_id: str | None = None,
     summary: str | None = None,
     errors: dict[int, str] | None = None,

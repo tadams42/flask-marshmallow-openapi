@@ -15,6 +15,7 @@ from .helpers import _parameters_from_schema, _update_errors
 
 def get(
     response_schema,
+    *,
     operation_id: str | None = None,
     summary: str | None = None,
     is_list: bool = True,
@@ -68,3 +69,49 @@ def get(
     _update_errors(open_api_data, errors)
 
     return functools.partial(FlaskPathsManager.decorate, open_api_data=open_api_data)
+
+
+def get_list(
+    response_schema,
+    *,
+    operation_id: str | None = None,
+    summary: str | None = None,
+    errors: dict[int, str] | None = None,
+    security: Securities = Securities.access_token,
+    additional_content: dict[str, dict | MediaTypeObject] | None = None,
+    tags_override: list[str] | None = None,
+):
+    return get(
+        response_schema,
+        operation_id=operation_id,
+        summary=summary,
+        errors=errors,
+        security=security,
+        additional_content=additional_content,
+        tags_override=tags_override,
+        is_list=True,
+        has_id_in_path=False,
+    )
+
+
+def get_detail(
+    response_schema,
+    *,
+    operation_id: str | None = None,
+    summary: str | None = None,
+    errors: dict[int, str] | None = None,
+    security: Securities = Securities.access_token,
+    additional_content: dict[str, dict | MediaTypeObject] | None = None,
+    tags_override: list[str] | None = None,
+):
+    return get(
+        response_schema,
+        operation_id=operation_id,
+        summary=summary,
+        errors=errors,
+        security=security,
+        additional_content=additional_content,
+        tags_override=tags_override,
+        is_list=False,
+        has_id_in_path=True,
+    )

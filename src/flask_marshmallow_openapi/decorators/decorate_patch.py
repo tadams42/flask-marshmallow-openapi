@@ -19,6 +19,7 @@ from .helpers import _parameters_from_schema, _update_errors
 def patch(
     request_schema: Type[ma.Schema],
     response_schema: Type[ma.Schema] | None = None,
+    *,
     operation_id: str | None = None,
     errors: dict[int, str] | None = None,
     additional_content: dict[str, dict | MediaTypeObject] | None = None,
@@ -80,7 +81,7 @@ def patch(
     open_api_data.operationId = operation_id or FlaskPathsManager.generate_operation_id(
         "patch", False, response_schema
     )
-    has_id = bool(getattr(request_schema.opts, "url_id_field", None))
+    has_id = bool(getattr(response_schema.opts, "url_id_field", None))
     _parameters_from_schema(
         response_schema, requires_id_in_path=has_id, open_api_data=open_api_data
     )
