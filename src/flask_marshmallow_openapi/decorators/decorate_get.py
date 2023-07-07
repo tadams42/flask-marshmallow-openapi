@@ -17,7 +17,8 @@ def get(
     response_schema,
     operation_id: str | None = None,
     summary: str | None = None,
-    many: bool = False,
+    is_list: bool = True,
+    has_id_in_path: bool = False,
     errors: dict[int, str] | None = None,
     security: Securities = Securities.access_token,
     additional_content: dict[str, dict | MediaTypeObject] | None = None,
@@ -30,10 +31,12 @@ def get(
     open_api_data = OperationObject()
 
     open_api_data.operationId = operation_id or FlaskPathsManager.generate_operation_id(
-        "get", many, response_schema
+        "get", is_list, response_schema
     )
     _parameters_from_schema(
-        response_schema, requires_id_in_path=not many, open_api_data=open_api_data
+        response_schema,
+        requires_id_in_path=has_id_in_path,
+        open_api_data=open_api_data,
     )
 
     open_api_data.responses = ResponsesObject()
@@ -53,22 +56,6 @@ def get(
             if not isinstance(media, MediaTypeObject):
                 media = MediaTypeObject(**media)
             open_api_data.responses["200"].content[content_type] = media
-
-    # if not many:
-    #     try:
-    #         open_api_data.parameters[0].name = response_schema.opts.url_id_field
-    #     except AttributeError:
-    #         # It is perfectly fine to use GET on URLs that don't have ID field and
-    #         # are described by schemas that don't have that field either.
-    #         pass
-
-    # for data in additional_parameters or []:
-    #     if isinstance(data, dict):
-    #         data = ParameterObject(**data)
-    #     open_api_data.parameters.append(data)
-
-    # if open_api_data.parameters:
-    #     open_api_data.parameters = [_ for _ in open_api_data.parameters if _.name]
 
     tags = tags_override or getattr(response_schema.opts, "tags", None)
     if tags:
