@@ -3,6 +3,8 @@
 [![PyPI Status](https://badge.fury.io/py/flask-marshmallow-openapi.svg)](https://badge.fury.io/py/flask-marshmallow-openapi)
 [![license](https://img.shields.io/pypi/l/flask-marshmallow-openapi.svg)](https://opensource.org/licenses/MIT)
 [![python_versions](https://img.shields.io/pypi/pyversions/flask-marshmallow-openapi.svg)](https://pypi.org/project/flask-marshmallow-openapi/)
+[![documentation](https://readthedocs.org/projects/flask-marshmallow-openapi/badge/?version=latest)](https://flask-marshmallow-openapi.readthedocs.io/en/latest/?badge=latest)
+
 
 Provides OpenAPI documentation generated from code for
 [Flask](https://flask.palletsprojects.com/en/latest/) APIs built around
@@ -21,6 +23,10 @@ Similar projects:
 ~~~sh
 pip install flask-marshmallow-openapi
 ~~~
+
+## Documentation
+
+[Read the Docs](https://flask-marshmallow-openapi.readthedocs.io/en/latest)
 
 ## What does it do?
 
