@@ -16,6 +16,25 @@ from .static_collector import StaticResourcesCollector
 
 _MINIMAL_SPEC = {"title": "Some API", "openapi_version": "3.0.2", "version": "v1"}
 
+_DEFAULT_SECURITIES = {
+    "components": {
+        "securitySchemes": {
+            "access_token": {
+                "scheme": "bearer",
+                "type": "http",
+                "bearerFormat": "JWT",
+                "description": "This endpoint requires [JWT](https://jwt.io/) access token.\n",
+            },
+            "refresh_token": {
+                "scheme": "bearer",
+                "type": "http",
+                "bearerFormat": "JWT",
+                "description": "This endpoint requires [JWT](https://jwt.io/) refresh token.\n",
+            },
+        }
+    },
+}
+
 
 @dataclass
 class OpenAPISettings:
@@ -190,14 +209,7 @@ class OpenAPI:
         with app.test_request_context():
             SchemasRegistry.find_all_schemas(self.config.app_package_name)
 
-            initial_swagger_json: dict = _MINIMAL_SPEC
-            if self.config.swagger_json_template_loader:
-                if self.config.swagger_json_template_loader_kwargs:
-                    initial_swagger_json = self.config.swagger_json_template_loader(
-                        **self.config.swagger_json_template_loader_kwargs
-                    )
-                else:
-                    initial_swagger_json = self.config.swagger_json_template_loader()
+            initial_swagger_json = self._load_initial_spec()
 
             ma_plugin = MarshmallowPlugin()
             self._apispec = apispec.APISpec(
@@ -231,6 +243,25 @@ class OpenAPI:
         if not hasattr(app, "extensions"):
             app.extensions = {}
         # app.extensions["open_api"] = self
+
+    def _load_initial_spec(self):
+        initial_swagger_json: dict = _MINIMAL_SPEC
+        if self.config.api_name:
+            _MINIMAL_SPEC["title"] = self.config.api_name
+        if self.config.api_version:
+            _MINIMAL_SPEC["version"] = self.config.api_version
+
+        if self.config.swagger_json_template_loader:
+            if self.config.swagger_json_template_loader_kwargs:
+                initial_swagger_json = self.config.swagger_json_template_loader(
+                    **self.config.swagger_json_template_loader_kwargs
+                )
+            else:
+                initial_swagger_json = self.config.swagger_json_template_loader()
+
+        initial_swagger_json.update(_DEFAULT_SECURITIES)
+
+        return initial_swagger_json
 
     def collect_static(self, destination_dir: str | Path):
         StaticResourcesCollector(self, destination_dir).collect()
