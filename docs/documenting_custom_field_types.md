@@ -15,7 +15,7 @@ Lets assume we want to introduce filed type representing
 First, we need to create `marshmallow.Field` class:
 
 ```py
-class UlidField(ma.fields.String):
+class UlidField(fields.String):
     OPENAPI_SCHEMA_ATTRS = {
         "type": "string",
         "format": "ULID",
@@ -43,19 +43,29 @@ class UlidField(ma.fields.String):
         ],
     }
 
-    @classmethod
-    def is_valid_ulid_string(cls, value):
-        return True
+    OPENAPI_URL_ID_PARAMETER = {
+        "name": "id",
+        "in": "path",
+        "required": True,
+        "allowEmptyValue": False,
+        "schema": {k: v for k, v in OPENAPI_SCHEMA_ATTRS.items() if k != "examples"},
+    }
 
-    def _serialize(self, value, attr, obj, **kwargs):
-        if not value:
-            return ""
-        return value
 
-    def _deserialize(self, value, attr, data, **kwargs):
-        if self.is_valid_ulid_string(value):
-            return value
-        raise ma.ValidationError("must be valid ULID string!")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.metadata["format"] = self.OPENAPI_SCHEMA_ATTRS["format"]
+        self.validators.insert(0, ulid_validator)
+
+
+RE_ULID = re.compile(r"[0-9A-HJKMNP-TV-Z]{26}")
+
+
+def ulid_validator(value):
+    from ...models.common.uuid_ulid import Converter
+
+    if not RE_ULID.match(value):
+        raise ValidationError("must be ULID encoded as Crockford's base32 string!")
 ```
 
 Then, let's add some schemas using it:
@@ -132,7 +142,7 @@ conf = OpenAPISettings(
 docs = OpenAPI(config=conf)
 
 
-def ULID_field2properties(self, field, **kwargs):
+def Ulid_field2properties(self, field, **kwargs):
     if isinstance(field, UlidField):
         return UlidField.OPENAPI_SCHEMA_ATTRS.items()
     return dict()
