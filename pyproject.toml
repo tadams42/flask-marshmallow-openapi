@@ -4,7 +4,7 @@ requires = ["setuptools >= 65", "wheel"]
 
 [project]
 name = "flask-marshmallow-openapi"
-version = "0.5.1"
+version = "0.6.0"
 description = "Flask + marshmallow + OpenAPI"
 readme = "README.md"
 requires-python = ">=3.10"
