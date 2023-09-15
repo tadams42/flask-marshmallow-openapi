@@ -1,7 +1,7 @@
 import re
 import textwrap
 from collections.abc import Generator
-from typing import Any, Final, Type
+from typing import Any, Callable, Final, Type
 
 import flask
 import inflection
@@ -55,45 +55,62 @@ class FlaskPathsManager:
 
         return wrapper(wrapped)
 
-    def __init__(self, app: flask.Flask) -> None:
+    def __init__(
+        self,
+        app: flask.Flask,
+        is_excluded_cb: Callable[[str, str], bool] | None = None,
+        overrides: dict[tuple[str, str], OperationObject] | None = None,
+    ) -> None:
         self.app = app
+        self.is_excluded_cb = is_excluded_cb
+        self.overrides: dict[tuple[str, str], OperationObject] = overrides or {}
 
     def collect_endpoints_docs(
         self,
     ) -> Generator[tuple[str, PathItemObject], None, None]:
         for rule in self.app.url_map.iter_rules():
-            if self._should_document_enpdpoint(rule.endpoint):
-                path, operations = self._path_for(rule)
-                if path and operations:
-                    yield path, operations
-
-    @classmethod
-    def _should_document_enpdpoint(cls, name: str) -> bool:
-        # Reduce spam in docs
-        return (
-            "_relationships_" not in name
-            and ".docs." not in name
-            and "static" not in name
-        )
+            operations = self._operations_for_rule(rule)
+            if operations:
+                yield (
+                    self._flask_path_template_to_open_api_path_template(rule.rule),
+                    operations,
+                )
 
     def _operations_for_rule(
         self, rule: werkzeug.routing.Rule
     ) -> PathItemObject | None:
-        supported_methods = [
-            _.lower() for _ in rule.methods if _ not in ["HEAD", "OPTIONS"]
+        docs_for_methods = [
+            _.lower() for _ in (rule.methods or []) if _ not in {"HEAD", "OPTIONS"}
         ]
         view = self.app.view_functions[rule.endpoint]
-
         retv = PathItemObject()
+        any_found = False
 
-        for method in supported_methods:
+        for method in docs_for_methods:
             view_func = self._view_func(view, method)
+            method_attr = method.lower() if method.lower() != "delete" else "delete_"
 
             operation: OperationObject = getattr(
                 view_func, self.ATTRIBUTE_NAME, OperationObject()
             )
 
             if operation.operationId == "hidden":
+                # Support for legacy, deprecated behavior
+                continue
+
+            # Check for override first, and only then is_excluded_cb
+            # If override exists, we don't want to skip docs
+
+            override = self.overrides.get(
+                (rule.rule, method.lower()), None
+            ) or self.overrides.get((rule.endpoint, method.lower()), None)
+            if override:
+                setattr(retv, method_attr, override)
+                any_found = True
+                continue
+
+            if self.is_excluded_cb and self.is_excluded_cb(rule.rule, method):
+                setattr(retv, method_attr, None)
                 continue
 
             if not operation.operationId:
@@ -107,12 +124,10 @@ class FlaskPathsManager:
 
             self._register_operation_id(operation)
 
-            if method.lower() == "delete":
-                setattr(retv, "delete_", operation)
-            else:
-                setattr(retv, method.lower(), operation)
+            setattr(retv, method_attr, operation)
+            any_found = True
 
-        return retv
+        return retv if any_found else None
 
     def _docstring_data(self, view, method: str) -> dict[str, Any] | None:
         f = self._view_func(view, method)
@@ -154,22 +169,6 @@ class FlaskPathsManager:
         else:
             f = view
         return f
-
-    def _path_for(
-        self, rule: werkzeug.routing.Rule
-    ) -> tuple[str | None, PathItemObject | None]:
-        # Bug in apispec_webframeworks.flask.FlaskPlugin only adds single path for each
-        # inspected view.
-        # https://github.com/ma-code/apispec-webframeworks/issues/14
-        #
-        # Thus, we implement our own inspection
-        operations = self._operations_for_rule(rule)
-        if operations:
-            return (
-                self._flask_path_template_to_open_api_path_template(rule.rule),
-                operations,
-            )
-        return None, None
 
     @classmethod
     def _flask_path_template_to_open_api_path_template(cls, path: str):

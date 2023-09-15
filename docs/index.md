@@ -63,6 +63,7 @@ security_schemes
 url_parameters
 openapi_tags
 openapi_middleware
+excluding_endpoint_docs
 documenting_custom_field_types
 serving_static_swagger_docs
 license

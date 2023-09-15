@@ -9,6 +9,7 @@ import flask
 import requests
 from apispec.exceptions import DuplicateComponentNameError
 from apispec.ext.marshmallow import MarshmallowPlugin
+from openapi_pydantic_models import OperationObject
 
 from .flask_paths import FlaskPathsManager
 from .schemas_registry import SchemasRegistry
@@ -99,6 +100,20 @@ class OpenAPISettings:
     #: If None, OpenAPI will not integrate CHANGELOG.md into documentation.
     changelog_md_loader: Callable[[], str] | None = None
 
+    # Set function that will blacklist some of the endpoints and methods from
+    # being documented.
+    #
+    # Example:
+    #
+    #     def should_skip(path: str, method: str):
+    #         return "/docs" in path or "/static" in path
+    #
+    #     OpenAPISettings(
+    #         ...
+    #         is_excluded_cb = should_skip
+    #     )
+    is_excluded_cb: Callable[[str, str], bool] | None = None
+
 
 class OpenAPI:
     """
@@ -143,9 +158,19 @@ class OpenAPI:
 
         self._map_to_openapi_types = []
         self._attribute_functions = []
+        self.docs_overrides: dict[tuple[str, str], OperationObject] = {}
 
         if app:
             self.init_app(app)
+
+    def add_override(self, path: str, method: str, docs: OperationObject):
+        """
+        Specifies documentation override for given path and method.
+
+        This will be used by OpenAPI middleware to override whatever docs would've been
+        generated for that path and method.
+        """
+        self.docs_overrides[(path, method.lower())] = docs
 
     def add_map_to_openapi_types(self, data):
         """
@@ -208,41 +233,47 @@ class OpenAPI:
 
         with app.test_request_context():
             SchemasRegistry.find_all_schemas(self.config.app_package_name)
-
-            initial_swagger_json = self._load_initial_spec()
-
-            ma_plugin = MarshmallowPlugin()
-            self._apispec = apispec.APISpec(
-                plugins=[ma_plugin], **(initial_swagger_json)
-            )
-            for _ in self._map_to_openapi_types:
-                ma_plugin.map_to_openapi_type(*_)
-            for _ in self._attribute_functions:
-                ma_plugin.converter.add_attribute_function(_)
-
-            for name, klass in SchemasRegistry.all_schemas().items():
-                # apispec automatically registers all nested schema so we must prevent
-                # registering them ourselves because of DuplicateSchemaError
-                x_tags = getattr(klass.opts, "x_tags", None)
-
-                try:
-                    if x_tags:
-                        self._apispec.components.schema(
-                            name, component={"x-tags": x_tags}, schema=klass
-                        )
-                    else:
-                        self._apispec.components.schema(name, schema=klass)
-                except DuplicateComponentNameError:
-                    pass
-
-            for path, operations in FlaskPathsManager(app).collect_endpoints_docs():
-                self._apispec.path(path=path, operations=operations.model_dump())
+            self._init_apispec()
+            self._collect_shema_docs()
+            self._collect_endpoints_docs(app)
 
         app.register_blueprint(self.blueprint, url_prefix=str(full_url_prefix))
 
         if not hasattr(app, "extensions"):
             app.extensions = {}
-        # app.extensions["open_api"] = self
+        app.extensions["open_api"] = self
+
+    def _collect_endpoints_docs(self, app):
+        for converted_path, operations in FlaskPathsManager(
+            app, self.config.is_excluded_cb, self.docs_overrides
+        ).collect_endpoints_docs():
+            self._apispec.path(path=converted_path, operations=operations.model_dump())
+
+    def _init_apispec(self):
+        initial_swagger_json = self._load_initial_spec()
+
+        ma_plugin = MarshmallowPlugin()
+        self._apispec = apispec.APISpec(plugins=[ma_plugin], **(initial_swagger_json))
+        for _ in self._map_to_openapi_types:
+            ma_plugin.map_to_openapi_type(*_)
+        for _ in self._attribute_functions:
+            ma_plugin.converter.add_attribute_function(_)
+
+    def _collect_shema_docs(self):
+        for name, klass in SchemasRegistry.all_schemas().items():
+            # apispec automatically registers all nested schema so we must prevent
+            # registering them ourselves because of DuplicateSchemaError
+            x_tags = getattr(klass.opts, "x_tags", None)
+
+            try:
+                if x_tags:
+                    self._apispec.components.schema(
+                        name, component={"x-tags": x_tags}, schema=klass
+                    )
+                else:
+                    self._apispec.components.schema(name, schema=klass)
+            except DuplicateComponentNameError:
+                pass
 
     def _load_initial_spec(self):
         initial_swagger_json: dict = _MINIMAL_SPEC
