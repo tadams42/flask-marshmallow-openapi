@@ -2,6 +2,7 @@ import functools
 from typing import Type
 
 import marshmallow as ma
+from flask.typing import ResponseReturnValue
 from openapi_pydantic_models import (
     Locations,
     OperationObject,
@@ -26,7 +27,7 @@ def post(
     errors: dict[int, str] | None = None,
     headers: list[ParameterObject | dict] | None = None,
     security: Securities = Securities.access_token,
-):
+) -> functools.partial[ResponseReturnValue]:
     """
     Decorator that will inject standard sets of our OpenAPI POST docs into decorated
     method.
