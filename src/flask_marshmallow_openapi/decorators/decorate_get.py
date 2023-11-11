@@ -1,5 +1,8 @@
 import functools
+from typing import Type
 
+import marshmallow as ma
+from flask.typing import ResponseReturnValue
 from openapi_pydantic_models import (
     MediaTypeObject,
     OperationObject,
@@ -14,7 +17,7 @@ from .helpers import _parameters_from_schema, _update_errors
 
 
 def get(
-    response_schema,
+    response_schema: Type[ma.Schema],
     *,
     operation_id: str | None = None,
     summary: str | None = None,
@@ -24,7 +27,7 @@ def get(
     security: Securities = Securities.access_token,
     additional_content: dict[str, dict | MediaTypeObject] | None = None,
     tags_override: list[str] | None = None,
-):
+) -> functools.partial[ResponseReturnValue]:
     """
     Decorator that will inject standard sets of our OpenAPI GET docs into decorated
     method.
@@ -72,7 +75,7 @@ def get(
 
 
 def get_list(
-    response_schema,
+    response_schema: Type[ma.Schema],
     *,
     operation_id: str | None = None,
     summary: str | None = None,
@@ -80,7 +83,7 @@ def get_list(
     security: Securities = Securities.access_token,
     additional_content: dict[str, dict | MediaTypeObject] | None = None,
     tags_override: list[str] | None = None,
-):
+) -> functools.partial[ResponseReturnValue]:
     return get(
         response_schema,
         operation_id=operation_id,
@@ -95,7 +98,7 @@ def get_list(
 
 
 def get_detail(
-    response_schema,
+    response_schema: Type[ma.Schema],
     *,
     operation_id: str | None = None,
     summary: str | None = None,
@@ -103,7 +106,7 @@ def get_detail(
     security: Securities = Securities.access_token,
     additional_content: dict[str, dict | MediaTypeObject] | None = None,
     tags_override: list[str] | None = None,
-):
+) -> functools.partial[ResponseReturnValue]:
     return get(
         response_schema,
         operation_id=operation_id,

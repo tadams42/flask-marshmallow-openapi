@@ -75,6 +75,10 @@ platforms = ["any"]
 include-package-data = true
 
 
+[tool.setuptools.package-data]
+flask_marshmallow_openapi = ["py.typed"]
+
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

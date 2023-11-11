@@ -2,6 +2,7 @@ import functools
 from typing import Type
 
 import marshmallow as ma
+from flask.typing import ResponseReturnValue
 from openapi_pydantic_models import (
     OperationObject,
     ResponsesObject,
@@ -13,13 +14,13 @@ from ..securities import Securities
 from .helpers import _parameters_from_schema, _update_errors
 
 
-def delete_(
+def delete(
     resource_schema: Type[ma.Schema],
     *,
     operation_id: str | None = None,
     errors: dict | None = None,
     security: Securities = Securities.access_token,
-):
+) -> functools.partial[ResponseReturnValue]:
     """
     Decorator that will inject standard sets of our OpenAPI DELETE docs into decorated
     method.

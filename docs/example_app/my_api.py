@@ -174,7 +174,7 @@ api = flask.Blueprint("my_api", __name__)
 
 
 # @api.route("/books/<int:book_id>", methods=["DELETE"])
-# @open_api.delete_(BookSchema)
+# @open_api.delete(BookSchema)
 # def books_delete(book_id):
 #     return flask.jsonify({})
 

@@ -2,6 +2,7 @@ import functools
 from typing import Type
 
 import marshmallow as ma
+from flask.typing import ResponseReturnValue
 from openapi_pydantic_models import (
     MediaTypeObject,
     OperationObject,
@@ -25,7 +26,7 @@ def patch(
     errors: dict[int, str] | None = None,
     additional_content: dict[str, dict | MediaTypeObject] | None = None,
     security: Securities = Securities.access_token,
-):
+) -> functools.partial[ResponseReturnValue]:
     """
     Decorator that will inject standard sets of our OpenAPI PATCH docs into decorated
     method.
