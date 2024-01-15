@@ -23,7 +23,7 @@ license = { text = "MIT" }
 authors = [{ name = "Tomislav Adamic", email = "tomislav.adamic@gmail.com" }]
 dependencies = [
     "apispec[yaml,marshmallow]",
-    "flask >= 2.3.0",
+    "flask >= 2.0.1",
     "inflection",
     "marshmallow >= 3.18.0",
     "pyyaml",
