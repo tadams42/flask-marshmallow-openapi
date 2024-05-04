@@ -62,8 +62,6 @@ RE_ULID = re.compile(r"[0-9A-HJKMNP-TV-Z]{26}")
 
 
 def ulid_validator(value):
-    from ...models.common.uuid_ulid import Converter
-
     if not RE_ULID.match(value):
         raise ValidationError("must be ULID encoded as Crockford's base32 string!")
 ```
