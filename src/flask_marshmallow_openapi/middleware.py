@@ -1,7 +1,6 @@
 import json
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable
 
 import apispec
@@ -14,6 +13,11 @@ from openapi_pydantic_models import OperationObject
 from .flask_paths import FlaskPathsManager
 from .schemas_registry import SchemasRegistry
 from .static_collector import StaticResourcesCollector
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _MINIMAL_SPEC = {"title": "Some API", "openapi_version": "3.0.2", "version": "v1"}
 
@@ -227,8 +231,19 @@ class OpenAPI:
     def init_app(self, app: flask.Flask):
         self._add_own_endpoints()
 
-        full_url_prefix = (
-            Path(self.config.mounted_at or "/") / f"./{self.blueprint.url_prefix}"
+        # Try making safe URL path from whatever input we get via self.config and
+        # self.blueprint. This is still not absolutely foolproof and will give dubious
+        # results for ie ("/v1//docs", "/foobar") => "/v1//docs/foobar". urllib.parse
+        # doesn't help here since it also doesn't try to correct invalid or dubious
+        # input.
+        full_url_prefix = "/" + "/".join(
+            [
+                _.strip("/\\")
+                for _ in [
+                    f"/{self.config.mounted_at or '/'}/",
+                    f"/{self.blueprint.url_prefix}",
+                ]
+            ]
         )
 
         with app.test_request_context():
@@ -237,7 +252,7 @@ class OpenAPI:
             self._collect_shema_docs()
             self._collect_endpoints_docs(app)
 
-        app.register_blueprint(self.blueprint, url_prefix=str(full_url_prefix))
+        app.register_blueprint(self.blueprint, url_prefix=full_url_prefix)
 
         if not hasattr(app, "extensions"):
             app.extensions = {}
