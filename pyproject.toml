@@ -47,6 +47,7 @@ dev = [
     "ipython >= 8.6.0",
     "isort >= 5.10.1",
     "pip-tools >= 6.5.1",
+    "ruff",
 ]
 # For dev machines and CI generating docs
 docs = [
@@ -126,3 +127,44 @@ source = ["src", "tests"]
 [tool.coverage.report]
 show_missing = true
 precision = 2
+
+
+[tool.ruff]
+exclude = [".git", ".venv", "build", "dist"]
+line-length = 88                             # Same as Black.
+target-version = "py310"
+cache-dir = "~/.cache/ruff"
+src = ["src"]
+
+[tool.ruff.lint.isort]
+known-local-folder = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",   # isort (I)
+    "C90", # mccabe (C90)
+    "UP",  # pyupgrade (UP)
+    "S",   # flake8-bandit (S)
+    "FBT", # flake8-boolean-trap (FBT)
+    "B",   # flake8-bugbear (B)
+    "C4",  # flake8-comprehensions (C4)
+    "DTZ", # flake8-datetimez (DTZ)
+    "FA",  # flake8-future-annotations (FA)
+    "G",   # flake8-logging-format (G)
+    "PIE", # flake8-pie (PIE)
+    "PT",  # flake8-pytest-style (PT)
+    "RET", # flake8-return (RET)
+    "SIM", # flake8-simplify (SIM)
+    "TCH", # flake8-type-checking (TCH)
+    "PTH", # flake8-use-pathlib (PTH)
+    "PL",  # Pylint (PL)
+    "TRY", # tryceratops (TRY)
+    "RUF", # Ruff-specific rules (RUF)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401", # unused-import (F401)
+]
