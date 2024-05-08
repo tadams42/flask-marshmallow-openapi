@@ -1,0 +1,38 @@
+name: Run tests
+
+
+on:
+  push
+
+
+
+jobs:
+  run_tests:
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: "🔹 🐍 ${{ matrix.python-version }}"
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "📦 set up 🐍 ${{ matrix.python-version }}"
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      - name: "📦 ensure latest 🐍 pip"
+        run: python -m pip install --upgrade pip
+
+      - name: "📦 ensure latest 🐍 wheel"
+        run: python -m pip install --upgrade wheel
+
+      - name: "📦 install flask-marshmallow-openapi"
+        run: pip install .[tests]
+
+      - name: "run tests 🔹 🐍 ${{ matrix.python-version }}"
+        run: pytest
