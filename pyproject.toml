@@ -45,9 +45,10 @@ dev = [
     "check-manifest >= 0.47",
     "flask-shell-ipython >= 0.5.1",
     "ipython >= 8.6.0",
-    "isort >= 5.10.1",
+    # "isort >= 5.10.1",
     "pip-tools >= 6.5.1",
     "ruff",
+    "rich",
 ]
 # For dev machines and CI generating docs
 docs = [
@@ -62,10 +63,10 @@ tests = [
     "coverage",
     "factory-boy >= 3.2.1",
     "faker >= 12.3.0",
-    "lorem >= 0.1.1",
+    # "lorem >= 0.1.1",
     "pytest >= 7.0.1",
-    "pytest-profiling >= 1.7.0",
-    "pytest-random-order >= 1.0.4",
+    # "pytest-profiling >= 1.7.0",
+    # "pytest-random-order >= 1.0.4",
     "pytest-spec >= 3.2.0",
 ]
 
