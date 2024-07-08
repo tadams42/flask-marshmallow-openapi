@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import apispec
 import flask
@@ -16,29 +17,23 @@ from .flask_paths import FlaskPathsManager
 from .schemas_registry import SchemasRegistry
 from .static_collector import StaticResourcesCollector
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from pathlib import Path
 
 _MINIMAL_SPEC = {"title": "Some API", "openapi_version": "3.0.2", "version": "v1"}
 
 _DEFAULT_SECURITIES = {
-    "components": {
-        "securitySchemes": {
-            "access_token": {
-                "scheme": "bearer",
-                "type": "http",
-                "bearerFormat": "JWT",
-                "description": "This endpoint requires [JWT](https://jwt.io/) access token.\n",
-            },
-            "refresh_token": {
-                "scheme": "bearer",
-                "type": "http",
-                "bearerFormat": "JWT",
-                "description": "This endpoint requires [JWT](https://jwt.io/) refresh token.\n",
-            },
-        }
+    "access_token": {
+        "scheme": "bearer",
+        "type": "http",
+        "bearerFormat": "JWT",
+        "description": "This endpoint requires [JWT](https://jwt.io/) access token.\n",
+    },
+    "refresh_token": {
+        "scheme": "bearer",
+        "type": "http",
+        "bearerFormat": "JWT",
+        "description": "This endpoint requires [JWT](https://jwt.io/) refresh token.\n",
     },
 }
 
@@ -307,7 +302,9 @@ class OpenAPI:
             else:
                 initial_swagger_json = self.config.swagger_json_template_loader()
 
-        initial_swagger_json.update(_DEFAULT_SECURITIES)
+        for k, v in _DEFAULT_SECURITIES.items():
+            if k not in initial_swagger_json["components"]["securitySchemes"]:
+                initial_swagger_json[k] = deepcopy(v)
 
         return initial_swagger_json
 
