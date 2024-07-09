@@ -309,7 +309,7 @@ class OpenAPI:
         return initial_swagger_json
 
     def collect_static(self, destination_dir: str | Path):
-        StaticResourcesCollector(self, destination_dir).collect()
+        return StaticResourcesCollector(self, destination_dir).collect()
 
     def _swagger_ui_template_config(self, config_overrides=None, oauth_config=None):
         # Swagger UI config

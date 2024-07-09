@@ -27,14 +27,17 @@ class StaticResourcesCollector:
         os.makedirs(self.docs_static, exist_ok=True)
         with current_app.test_request_context():
             # Do this so url_for generates correct URLs
-            swagger_json_url = self._write_swagger_json()
+            swagger_json_url, swagger_json_disk_path = self._write_swagger_json()
             self._write_redoc_html(swagger_json_url)
             self._write_swagger_ui_html(swagger_json_url)
             self._write_changelog_html()
         self._copy_src_static_folder()
 
+        return swagger_json_disk_path
+
     def _write_swagger_json(self):
         swagger_json_filename = None
+        swagger_json_disk_path = None
 
         for ext in ["json", "yaml"]:
             with open(self.docs_static / "open_api_spec.tmp", "w") as f:
@@ -52,13 +55,16 @@ class StaticResourcesCollector:
             else:
                 dest = f"swagger_{digest}.{ext}"
 
+            if ext == "json":
+                swagger_json_disk_path = self.docs_static / dest
+
             os.rename(self.docs_static / "open_api_spec.tmp", self.docs_static / dest)
 
         new_swagger_json_path = flask.url_for(
             "open_api.static", filename=swagger_json_filename
         )
 
-        return new_swagger_json_path
+        return new_swagger_json_path, swagger_json_disk_path
 
     def _write_redoc_html(self, swagger_json_url):
         page = flask.render_template(
