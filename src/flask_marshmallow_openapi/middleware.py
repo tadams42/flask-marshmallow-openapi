@@ -27,13 +27,13 @@ _DEFAULT_SECURITIES = {
         "scheme": "bearer",
         "type": "http",
         "bearerFormat": "JWT",
-        "description": "This endpoint requires [JWT](https://jwt.io/) access token.\n",
+        "description": "This endpoint requires [JWT](https://jwt.io/) access token.",
     },
     "refresh_token": {
         "scheme": "bearer",
         "type": "http",
         "bearerFormat": "JWT",
-        "description": "This endpoint requires [JWT](https://jwt.io/) refresh token.\n",
+        "description": "This endpoint requires [JWT](https://jwt.io/) refresh token.",
     },
 }
 
@@ -302,9 +302,15 @@ class OpenAPI:
             else:
                 initial_swagger_json = self.config.swagger_json_template_loader()
 
+        if "components" not in initial_swagger_json:
+            initial_swagger_json["components"] = {}
+
+        if "securitySchemes" not in initial_swagger_json["components"]:
+            initial_swagger_json["components"]["securitySchemes"] = {}
+
         for k, v in _DEFAULT_SECURITIES.items():
             if k not in initial_swagger_json["components"]["securitySchemes"]:
-                initial_swagger_json[k] = deepcopy(v)
+                initial_swagger_json["components"]["securitySchemes"][k] = deepcopy(v)
 
         return initial_swagger_json
 
@@ -393,7 +399,7 @@ class OpenAPI:
         )
         self.blueprint.add_url_rule(
             rule="/re_doc",
-            endpoint=f"re_doc",
+            endpoint="re_doc",
             view_func=lambda: flask.render_template(
                 "re_doc.jinja2", api_name=self.config.api_name
             ),
@@ -413,7 +419,7 @@ class OpenAPI:
             )
             self.blueprint.add_url_rule(
                 rule="/changelog",
-                endpoint=f"changelog",
+                endpoint="changelog",
                 view_func=lambda: flask.render_template(
                     "changelog.html.jinja2", api_name=self.config.api_name
                 ),
