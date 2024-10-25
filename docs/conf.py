@@ -42,7 +42,6 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3.9", None),
     "marshmallow": ("https://marshmallow.readthedocs.io/en/3.0/", None),
     "json": ("https://simplejson.readthedocs.io/en/latest/", None),
-    "simplejson": ("https://simplejson.readthedocs.io/en/latest/", None),
 }
 
 add_module_names = False
