@@ -145,7 +145,10 @@ class BookSchema(ma.Schema):
                 "in": "query",
                 "required": True,
                 "allowEmptyValue": False,
-                "schema": {"type": "string"},
+                "schema": {
+                    "type": "string",
+                    "format": "ULID",
+                },
             }
         ]
 
