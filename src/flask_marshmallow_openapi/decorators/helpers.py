@@ -43,16 +43,18 @@ def _parameters_from_schema(
     open_api_data.parameters = []
     open_api_data.responses = ResponsesObject()
 
+    url_id_field_name: str | None = getattr(schema_cls.opts, "url_id_field", None)
     id_parameter: ParameterObject | None = None
+
     for param in getattr(schema_cls.opts, "url_parameters", None) or []:
         if isinstance(param, dict):
             param = ParameterObject(**param)
-        if param.name == "id":
+
+        if param.name in ("id", url_id_field_name):
             id_parameter = param
         else:
             open_api_data.parameters.append(param)
 
-    url_id_field_name: str | None = getattr(schema_cls.opts, "url_id_field", None)
     if id_parameter and url_id_field_name:
         id_parameter.name = url_id_field_name
 

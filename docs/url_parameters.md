@@ -99,3 +99,54 @@ def reset_password_confirm(token):
 which gets us:
 
 ![ReDoc](./img/url_parameters_02.png "ReDoc - URL parameters")
+
+
+## Special treatment of object identifiers in URL path
+
+By default, `@get` and `@patch` route decorators assume integer URL path parameter named
+`id`:
+
+```
+GET /books/<int:id>
+PATCH /books/<int:id>
+```
+
+If for whatever reason this default is not enough, we can both rename and better describe
+object identifier parameter using `Schema.Meta`.
+
+Renaming it:
+
+```py
+class BookSchema(ma.Schema):
+    OPTIONS_CLASS = SchemaOpts
+
+    class Meta:
+        url_id_field = "book_id"
+```
+
+Which will document it like this:
+
+```
+GET /books/<int:book_id>
+PATCH /books/<int:book_id>
+```
+
+Adding more details to ID parameter docs:
+
+```py
+class BookSchema(ma.Schema):
+    OPTIONS_CLASS = SchemaOpts
+
+    class Meta:
+        url_id_field = "book_id"
+        url_parameters = [
+            {
+                "name": "book_id",
+                "in": "query",
+                "required": True,
+                "allowEmptyValue": False,
+                "schema": {"type": "string"},
+            }
+        ]
+
+```
