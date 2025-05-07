@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 65", "wheel"]
+requires = ["setuptools >= 77", "wheel"]
 
 
 [project]
@@ -10,7 +10,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -21,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 keywords = ["OpenAPI SwaggerUI ReDoc"]
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Tomislav Adamic", email = "tomislav.adamic@gmail.com" }]
 dependencies = [
     "apispec[yaml,marshmallow]",
