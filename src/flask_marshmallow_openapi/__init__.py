@@ -1,4 +1,4 @@
-__version__ = "0.6.8"
+__version__ = "0.6.9"
 
 from . import decorators as open_api
 from .middleware import OpenAPI, OpenAPISettings

@@ -12,7 +12,7 @@ project = "flask-marshmallow-openapi"
 copyright = (
     ", ".join(str(y) for y in range(2023, datetime.now().year + 1)) + ", " + author
 )
-release = "0.6.8"
+release = "0.6.9"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
