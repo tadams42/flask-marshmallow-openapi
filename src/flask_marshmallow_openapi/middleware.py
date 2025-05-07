@@ -314,8 +314,31 @@ class OpenAPI:
 
         return initial_swagger_json
 
-    def collect_static(self, destination_dir: str | Path):
-        return StaticResourcesCollector(self, destination_dir).collect()
+    def collect_static(
+        self, destination_dir: str | Path, *, cache_bust_swagger_json: bool = True
+    ):
+        """
+        Collects static file into specified directory.
+
+        Static files for self-hosted doc viewers (SwaggerUI, ReDoc) and OpenAPI spec
+        (swagger.json) are saved into specified directory and readied to be served
+        directly from disk via reverse proxy (ie. Nginx).
+
+        `cache_bust_swagger_json` - depending on your preferred cache configuration,
+        `swagger.json` file can be saved on disk as:
+
+        1. `swagger.json` if `cache_bust_swagger_json == False`
+        2. `swagger_SOME_GENERATED_DIGEST.json` if `cache_bust_swagger_json == True`
+
+        This also
+
+        - creates different URL for `GET swagger.json`
+        - different contents of generated HTML for doc viewers
+        """
+
+        return StaticResourcesCollector(
+            self, destination_dir, cache_bust_swagger_json=cache_bust_swagger_json
+        ).collect()
 
     def _swagger_ui_template_config(self, config_overrides=None, oauth_config=None):
         # Swagger UI config

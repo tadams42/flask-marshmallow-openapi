@@ -18,10 +18,17 @@ _SELF_PATH = Path(os.path.abspath(os.path.dirname(__file__)))
 
 
 class StaticResourcesCollector:
-    def __init__(self, open_api: OpenAPI, destination_dir: str | Path):
+    def __init__(
+        self,
+        open_api: OpenAPI,
+        destination_dir: str | Path,
+        *,
+        cache_bust_swagger_json: bool = True,
+    ):
         self.open_api = open_api
         self.destination_dir = Path(destination_dir) / "docs"
         self.docs_static = self.destination_dir / "static"
+        self.cache_bust_swagger_json = cache_bust_swagger_json
 
     def collect(self):
         os.makedirs(self.docs_static, exist_ok=True)
@@ -46,16 +53,15 @@ class StaticResourcesCollector:
                 else:
                     f.write(self.open_api._to_yaml)
 
-            digest = _file_checksum(
-                self.docs_static / "open_api_spec.tmp", hashlib.sha256
+            digest = (
+                _file_checksum(self.docs_static / "open_api_spec.tmp", hashlib.sha256)
+                if self.cache_bust_swagger_json
+                else None
             )
+            dest = f"swagger_{digest}.{ext}" if digest else f"swagger.{ext}"
 
             if ext == "json":
-                dest = swagger_json_filename = f"swagger_{digest}.{ext}"
-            else:
-                dest = f"swagger_{digest}.{ext}"
-
-            if ext == "json":
+                swagger_json_filename = dest
                 swagger_json_disk_path = self.docs_static / dest
 
             os.rename(self.docs_static / "open_api_spec.tmp", self.docs_static / dest)
