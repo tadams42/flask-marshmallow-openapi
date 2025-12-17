@@ -4,21 +4,23 @@ import json
 import os
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import apispec
 import flask
 import requests
 from apispec.exceptions import DuplicateComponentNameError
 from apispec.ext.marshmallow import MarshmallowPlugin
-from openapi_pydantic_models import OperationObject
 
 from .flask_paths import FlaskPathsManager
 from .schemas_registry import SchemasRegistry
 from .static_collector import StaticResourcesCollector
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+
+    from openapi_pydantic_models import OperationObject
 
 _MINIMAL_SPEC = {"title": "Some API", "openapi_version": "3.0.2", "version": "v1"}
 

@@ -5,14 +5,16 @@ on:
   push
 
 
-
 jobs:
   run_tests:
+
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest]
+
     runs-on: ${{ matrix.os }}
+
     name: "🔹 🐍 ${{ matrix.python-version }}"
 
     steps:
@@ -22,17 +24,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
 
-      - name: "📦 ensure latest 🐍 pip"
-        run: python -m pip install --upgrade pip
-
-      - name: "📦 ensure latest 🐍 wheel"
-        run: python -m pip install --upgrade wheel
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          # python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
 
       - name: "📦 install flask-marshmallow-openapi"
-        run: pip install .[tests]
+        run: uv sync --dev
 
       - name: "run tests 🔹 🐍 ${{ matrix.python-version }}"
-        run: pytest
+        run: uv run pytest .

@@ -79,3 +79,4 @@ docs/_build
 
 .python-version
 .requirements.txt
+uv.lock

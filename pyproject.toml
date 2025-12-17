@@ -7,16 +7,16 @@ name = "flask-marshmallow-openapi"
 version = "0.6.9"
 description = "Flask + marshmallow + OpenAPI"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
 ]
 keywords = ["OpenAPI SwaggerUI ReDoc"]
@@ -24,9 +24,9 @@ license = "MIT"
 authors = [{ name = "Tomislav Adamic", email = "tomislav.adamic@gmail.com" }]
 dependencies = [
     "apispec[yaml,marshmallow]",
-    "flask >= 2.0.1",
+    "flask >= 3.1",
     "inflection",
-    "marshmallow >= 3.18.0",
+    "marshmallow >= 4.1",
     "pyyaml",
     "requests",
     "wrapt",
@@ -39,38 +39,28 @@ Source = "https://github.com/tadams42/flask-marshmallow-openapi"
 Documentation = "https://flask-marshmallow-openapi.readthedocs.io/en/latest/"
 
 
-[project.optional-dependencies]
-# For dev machines
+# Private, local dependencies
+[dependency-groups]
 dev = [
-    "black >= 22.1.0",
-    "bump2version >= 1.0.1",
-    "check-manifest >= 0.47",
-    "flask-shell-ipython >= 0.5.1",
-    "ipython >= 8.6.0",
-    # "isort >= 5.10.1",
-    "pip-tools >= 6.5.1",
-    "ruff",
+    "black",
+    "bump2version",
+    "ipython",
     "rich",
+    "pre-commit",
+    "check-manifest",
+    # "flask-shell-ipython >= 0.5.1",
+    "ruff",
+    "pytest",
+    "pytest-spec",
+    "faker",
+    "factory-boy",
 ]
-# For dev machines and CI generating docs
-docs = [
-    "furo",
-    "myst-parser",
-    "sphinx > 5.2.0",
-    "sphinx_rtd_theme",
-    "sphinx-copybutton",
-]
-# For dev machines and CI running tests
-tests = [
-    "coverage",
-    "factory-boy >= 3.2.1",
-    "faker >= 12.3.0",
-    # "lorem >= 0.1.1",
-    "pytest >= 7.0.1",
-    # "pytest-profiling >= 1.7.0",
-    # "pytest-random-order >= 1.0.4",
-    "pytest-spec >= 3.2.0",
-]
+
+
+# Published, extra dependencies
+# Ie. package can be installed with `pip install package_name[extra_dependency_name]`
+[project.optional-dependencies]
+docs = ["furo", "myst-parser", "sphinx", "sphinx-copybutton"]
 
 
 [tool.setuptools]
